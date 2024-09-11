@@ -74,6 +74,7 @@
         let windowCount = 0;
         const maxWindows = 100; // Número máximo de janelas para simulação de travamento
         const usedVelocities = new Set(); // Conjunto para rastrear velocidades já usadas
+        const speedMultiplier = 1.5; // Ajuste para a velocidade das janelas
 
         function createInitialWindow() {
             document.getElementById('openButton').style.display = 'none'; // Esconde o botão
@@ -121,6 +122,13 @@
             windowCount++;
             moveWindowContinuously(windowDiv);
 
+            // Adiciona o bloqueio temporário do cursor com chance de 1/2000
+            if (Math.random() < 0.0005) { // 1/2000 de chance
+                setTimeout(() => {
+                    lockCursor(windowDiv);
+                }, 0); // Inicia imediatamente
+            }
+
             // Simula travamento conforme o número de janelas
             if (windowCount > maxWindows) {
                 simulateLag();
@@ -155,8 +163,8 @@
             // Gera uma velocidade única para cada janela que não é muito lenta
             let deltaX, deltaY;
             do {
-                deltaX = Math.round((Math.random() - 0.5) * 20); // Velocidade entre -10 e 10
-                deltaY = Math.round((Math.random() - 0.5) * 20);
+                deltaX = Math.round((Math.random() - 0.5) * 20 * speedMultiplier); // Velocidade ajustada
+                deltaY = Math.round((Math.random() - 0.5) * 20 * speedMultiplier);
             } while (usedVelocities.has(`${deltaX},${deltaY}`) || (deltaX === 0 && deltaY === 0));
             
             usedVelocities.add(`${deltaX},${deltaY}`); // Registra a velocidade para evitar duplicatas
@@ -207,6 +215,13 @@
             move();
         }
 
+        function lockCursor(windowDiv) {
+            windowDiv.style.pointerEvents = 'none'; // Desativa a interação com o cursor
+            setTimeout(() => {
+                windowDiv.style.pointerEvents = ''; // Reativa a interação com o cursor após 2 segundos
+            }, 2000);
+        }
+
         function simulateLag() {
             // Função para simular travamento e efeito de carregamento
             document.querySelectorAll('.window').forEach(win => {
@@ -214,6 +229,22 @@
                 win.style.transition = 'none'; // Remove a transição para simular travamento
             });
         }
+
+        // Função para fechar uma janela ao pressionar Ctrl+E
+        function handleKeyboardShortcuts(event) {
+            if (event.ctrlKey && event.key === 'e') {
+                // Encontra a primeira janela e fecha
+                const firstWindow = document.querySelector('.window');
+                if (firstWindow) {
+                    firstWindow.remove();
+                    windowCount--;
+                    createWindows(); // Cria de 2 a 5 novas janelas ao fechar uma existente
+                }
+            }
+        }
+
+        // Adiciona o listener de atalho de teclado
+        document.addEventListener('keydown', handleKeyboardShortcuts);
     </script>
 </body>
 </html>
